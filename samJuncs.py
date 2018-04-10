@@ -90,6 +90,7 @@ class SAM(object):
 			print("ERROR: Cannot find file %s. Exiting!" % self.inFile, file=sys.stderr)
 			sys.exit(1)
 	
+		self.strandInfo = {0:'+', 16:'-'}
 		#print(self.reader.find_introns((read for read in self.reader.fetch() if read.is_reverse)))
 
 		#sys.exit(1)
@@ -140,6 +141,78 @@ class SAM(object):
 
 
 		return self.juncCounts
+
+	def readJuncs(self):
+		'''
+		Returns start, end and junctions from a single read.
+		'''
+
+		for read in self.reader.fetch():
+
+			try:
+				# Skip unmapped or multimapped reads.
+				strand = self.strandInfo[read.flag]
+			except:
+				continue
+
+			qName = read.query_name
+			chromosome = read.reference_name
+			
+			refPos = read.pos
+			refEnd = read.pos
+			
+
+			startPos = read.pos
+			cigar = read.cigar
+			
+			# Here is the read starts
+			rstart = int(read.pos)
+
+			# Next will be junctions
+			junctions = set()
+			orientation = read.flag
+
+			if orientation == 0:
+				orientation = "+"
+			elif orientation == 16:
+				orientation = "-"
+			else:
+				continue
+
+			tags = read.get_tags()
+
+			
+			juncDir = [x[-1] for x in tags if x[0] == 'ts']
+
+			if not juncDir:
+				juncDir = 'nan'
+
+			else:
+				juncDir = juncDir[0]
+				if orientation == "+" and juncDir == "+":
+					juncDir = "+"
+				elif orientation == "+" and juncDir == "-":
+					juncDir = "-"
+				elif orientation == "-" and juncDir == "+":
+					juncDir = "-"
+				elif orientation == "-" and juncDir == "-":
+					juncDir = "+"
+
+			for num, flagTuple in enumerate(cigar,1):
+				flag, length = flagTuple 
+				if flag not in [0,2,3,7,8]:
+					continue
+					
+				if flag == 3:
+					junctions.add((refEnd, refEnd+length))
+
+				refPos = refEnd+length
+				refEnd = refPos
+
+			# Last is the end
+			rend = refEnd
+
+			yield (qName, chromosome, rstart, list(junctions), rend, orientation, juncDir)
 
 def main():
 	'''
