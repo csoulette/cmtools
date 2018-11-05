@@ -103,6 +103,7 @@ def main():
         header = next(lines)
         header = header.rstrip().split("\t")
         eventUUID = 0 
+        print("gene_id", "\t".join(header), sep="\t", file=jbAmended)
         for line in tqdm(lines, total=count, desc="Converting juncbase entries to DRIMMSeq format.") if verbose else lines:
     
             cols       =  line.rstrip().split("\t")

@@ -15,4 +15,4 @@ then
 fi
 
 
-awk 'FNR==NR{a[$2]=$(NF-1)"\t"$NF; next} {if ($1 in a)print $0,a[$1]}' $FILE1 $FILE2
+awk 'FNR==NR{a[$2]=$(NF-1)"\t"$NF; next} {if ($1 in a) { print $0,a[$1] } else if ($1=="gene_id") { print }}' $FILE1 $FILE2
