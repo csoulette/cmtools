@@ -1,0 +1,33 @@
+import os, sys
+import re
+ioeFile = sys.argv[1]
+
+tracker = dict()
+out1 = open("merged.%s" % ioeFile,'w') 
+with open(ioeFile) as lines:
+    print(next(lines).rstrip(),file=out1)
+    for l in lines:
+        if "seqname" in l: continue
+        #chrYENSGR0000002586 ENSGR0000002586;SE:chrY:2594414-2606241:2606297-2608820:+ 999bdcca-a305-418f-93ef-d8818544bffc;0_ENSGR0000002586.13-2,4612f8da-fc52-4967-8e2d-3f75b6095bd0;0_ENSGR0000002586.13fdf42774-d4dd-473a-910d-765ded224db0;16_ENSGR0000002586.13,999bdc
+        atype = re.search(";(..):",l.split()[2]).group(1)
+        
+        if len(atype) !=2:
+            print(l)
+        entry = l.rstrip()
+        event = entry.split()
+        
+        eventData = event[2].replace("-",":").split(":")
+        se = (event[0], event[1], eventData[3], eventData[4],atype)
+        if se not in tracker:
+            tracker[se] = {"alt":set(),"total":set()}
+        tracker[se]["alt"].update(list(event[-2].split(",")))
+        tracker[se]["total"].update(list(event[-1].split(",")))
+
+
+
+
+for i,k in tracker.items():
+    chrom,gene,stuff1,stuff2,stuff3 = i
+    print(chrom,gene,"%s:%s-%s;%s" % (chrom,stuff1,stuff2,stuff3),",".join([ i for i in k['alt']]),",".join([i for i in k['total']]),sep="\t", file=out1)
+
+out1.close()
